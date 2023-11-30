@@ -1,5 +1,8 @@
+"""
+    Show the value counts of the labels' file
+"""
+
 import numpy as np
-import pandas as pd
 
 # Base directory path for the .npy files
 base_dir_path = "/home/vijay/Desktop/college/active-work/multimodal-alignment/data/modelnet40c-numpy/modelnet40_c"
@@ -10,8 +13,8 @@ def load_npy(filename):
     try:
         data =  np.load(filename, allow_pickle=True) 
     except Exception as e:
-        print(f"Error while loading {filename}: {e.with_traceback()}")
-        return data
+        print(f"Error while loading {filename}: {e}")
+        return None
     return data
 
 if __name__ == "__main__":
