@@ -162,3 +162,7 @@ cython_debug/
 # Zip archives
 **/*.zip
 *.zip
+
+# Base modelnet40c directory - large files!
+**/modelnet40_c/*
+modelnet40_c/*
