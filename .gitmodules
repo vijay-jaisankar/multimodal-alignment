@@ -1,3 +1,6 @@
 [submodule "PointVisualizaiton"]
 	path = PointVisualizaiton
 	url = git@github.com:qizekun/PointVisualizaiton.git
+[submodule "ModelNet40-C"]
+	path = ModelNet40-C
+	url = git@github.com:jiachens/ModelNet40-C.git
