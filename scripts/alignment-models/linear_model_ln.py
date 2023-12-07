@@ -3,7 +3,7 @@
     Variant: LN
 """
 import torch
-import torch.nn
+import torch.nn as nn
 
 # Set the device the model will be loaded on
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
