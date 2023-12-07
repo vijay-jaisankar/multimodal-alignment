@@ -1,6 +1,6 @@
 """
     Linear mapping between Pointnet outputs and the CLIP-VIT-LAION model
-    Variant: BN
+    Variant: LN
 """
 import torch
 import torch.nn
@@ -9,7 +9,7 @@ import torch.nn
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-class LinearProjectionHeadBN(nn.Module):
+class LinearProjectionHeadLN(nn.Module):
     def __init__(self, input_emb_size = 1024, output_emb_size = 1024, inter_size_1 = 2048, inter_size_2 = 4096, bottle_size = 8192, dropout_rate = 0.20, device = device):
         super().__init__()
         # Initialise parameters
