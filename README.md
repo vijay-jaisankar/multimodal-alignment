@@ -1,8 +1,8 @@
 # POINTSPIDER
-Multimodal alignment of images and point clouds on the modelnet-c dataset
+Multimodal alignment of images and point clouds on the Modelnet-40C dataset using linear layers
 
 ## Dataset
-The data from this project was sourced from [Github](https://github.com/jiachens/ModelNet40-C/). All credits go to the respective authors.
+The data for this project was sourced from [Github](https://github.com/jiachens/ModelNet40-C/). All credits go to the respective authors.
 
 ## Report
 The findings of the experiments can be found in the [report](./multimodal_representation_report.pdf). The LaTeX source can be found in [this directory](./multimodal_representation_report).
