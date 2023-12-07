@@ -166,3 +166,9 @@ cython_debug/
 # Base modelnet40c directory - large files!
 **/modelnet40_c/*
 modelnet40_c/*
+
+# Saved models (due to no LFS)
+*.pth
+**/*.pth
+*.pt
+**/*.pt
