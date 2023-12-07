@@ -1,6 +1,6 @@
 """
     Linear mapping between Pointnet outputs and the CLIP-VIT-LAION model
-    Variant: BASE
+    Variant: BN
 """
 import torch
 import torch.nn
@@ -8,9 +8,9 @@ import torch.nn
 # Set the device the model will be loaded on
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Model definition
-class LinearProjectionHead(nn.Module):
-    def __init__(self, input_emb_size = 1024, output_emb_size = 1024, inter_size_1 = 2048, inter_size_2 = 4096, bottle_size = 8192, dropout_rate = 0.15, device = device):
+
+class LinearProjectionHeadBN(nn.Module):
+    def __init__(self, input_emb_size = 1024, output_emb_size = 1024, inter_size_1 = 2048, inter_size_2 = 4096, bottle_size = 8192, dropout_rate = 0.20, device = device):
         super().__init__()
         # Initialise parameters
         self.input_emb_size = input_emb_size
@@ -25,6 +25,7 @@ class LinearProjectionHead(nn.Module):
         self.up1 = nn.Sequential(
             nn.Linear(self.input_emb_size, self.inter_size_1),
             nn.PReLU(),
+            nn.LayerNorm(self.inter_size_1),
             nn.Dropout(p = self.dropout_rate)
         )
         
@@ -32,6 +33,7 @@ class LinearProjectionHead(nn.Module):
         self.up2 = nn.Sequential(
             nn.Linear(self.inter_size_1, self.inter_size_2),
             nn.PReLU(),
+            nn.LayerNorm(self.inter_size_2),
             nn.Dropout(p = self.dropout_rate)
         )
         
@@ -39,6 +41,7 @@ class LinearProjectionHead(nn.Module):
         self.bottleneck = nn.Sequential(
             nn.Linear(self.inter_size_2, self.bottle_size),
             nn.Tanh(),
+            nn.LayerNorm(self.bottle_size),
             nn.Dropout(p = self.dropout_rate)
         )
         
@@ -53,12 +56,13 @@ class LinearProjectionHead(nn.Module):
         self.down2 = nn.Sequential(
             nn.Linear(self.inter_size_2, self.inter_size_1),
             nn.Tanh(),
+            nn.LayerNorm(self.inter_size_1),
             nn.Dropout(p = self.dropout_rate)
         )
         
         # Final projection to output space
         self.fc = nn.Sequential(
-            nn.Linear(self.inter_size_1, self.output_emb_size)
+            nn.Linear(self.inter_size_1, self.output_emb_size),
         )
         
     def forward(self, x):
