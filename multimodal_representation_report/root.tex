@@ -1,0 +1,318 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%2345678901234567890123456789012345678901234567890123456789012345678901234567890
+%        1         2         3         4         5         6         7         8
+
+\documentclass[letterpaper, 10 pt, conference]{ieeeconf}  % Comment this line out if you need a4paper
+
+%\documentclass[a4paper, 10pt, conference]{ieeeconf}      % Use this line for a4 paper
+
+\IEEEoverridecommandlockouts                              % This command is only needed if 
+% you want to use the \thanks command
+
+\overrideIEEEmargins                                      % Needed to meet printer requirements.
+
+%In case you encounter the following error:
+%Error 1010 The PDF file may be corrupt (unable to open PDF file) OR
+%Error 1000 An error occurred while parsing a contents stream. Unable to analyze the PDF file.
+%This is a known problem with pdfLaTeX conversion filter. The file cannot be opened with acrobat reader
+%Please use one of the alternatives below to circumvent this error by uncommenting one or the other
+%\pdfobjcompresslevel=0
+%\pdfminorversion=4
+
+% See the \addtolength command later in the file to balance the column lengths
+% on the last page of the document
+
+% The following packages can be found on http:\\www.ctan.org
+\usepackage{graphicx} % for pdf, bitmapped graphics files
+%\usepackage{epsfig} % for postscript graphics files
+%\usepackage{mathptmx} % assumes new font selection scheme installed
+%\usepackage{times} % assumes new font selection scheme installed
+%\usepackage{amsmath} % assumes amsmath package installed
+%\usepackage{amssymb}  % assumes amsmath package installed
+
+\usepackage{xcolor}
+\usepackage{balance}
+\usepackage{algorithm,algorithmic}
+\usepackage{subcaption}
+
+
+
+
+\title{\LARGE \bf
+    POINTSPIDER: Learning linear mappings for multimodal alignment of images and point clouds
+}
+
+
+\author{Vijay Jaisankar, Jaya Sreevalsan Nair}
+
+\begin{document}
+
+
+
+\maketitle
+\thispagestyle{empty}
+\pagestyle{empty}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{abstract}
+In this paper, we propose POINTSPIDER, a linear mapping model bridging embeddings of point clouds and images. We explore minimal test dataset creation through Double Roulette sampling and evaluate the efficacy of pretrained Large Image models in zero-shot classification. By using pre-trained Pointnet and CLIP-ViT backbones, we obtain a validation Mean L1 loss value of $\approx$ 0.25 using linear layers with layer normalisation.
+\end{abstract}
+
+\section{INTRODUCTION}
+\label{intro}
+
+\subsection{Multimodal learning}
+\label{intro:multimodal}
+Multimodal learning (MML) is a general approach to building AI models that can extract and relate information from multimodal data~\cite{10123038}. MML systems are being increasingly adopted, owing to their correspondence to human perception. Recent pathbreaking developments in MML systems like OpenAI's GPT-4~\cite{openai2023gpt4} and Google Deepmind's Gemini~\cite{gemini2023} have demonstrated considerable academic and commercial value for such systems. In this regard, research into MML systems for aligning different modalities is a valuable contribution to understanding the outputs of different sensors and inputs into systems.
+
+\subsection{Point clouds as input modalities to MMLs}
+\label{intro:pointclouds}
+There has been considerable work done on learning generalisable representations for point clouds conjoined with various other modalities. 
+\\
+For example, ULIP~\cite{Xue_2023_CVPR} utilises large pre-trained image and text encoders and uses a sample of the respective data pool to align the corresponding 3D point clouds. 
+\\ 
+We wish to achieve a similar multimodal alignment scheme on a \textit{smaller scale}. We hypothesise that by using a small set of high-quality inputs and a lightweight model architecture, the embeddings produced through multimodal alignment can be used for effective representations, and can also then be fine-tuned to downstream tasks while using relatively lower computational resources. 
+
+\subsection{Overview of POINTSPIDER}
+\label{intro:pointspider}
+Building on ~\ref{intro:pointclouds}, we propose POINTSPIDER, a Deep Neural Network (DNN)~\cite{aggarwal2018neural} architecture that aligns point clouds and their corresponding images. By keeping the mapping network relatively lightweight, we hypothesise that it can be further finetuned for future use cases. 
+
+
+\begin{figure}
+\centering
+\begin{subfigure}{0.20\textwidth}
+    \includegraphics[width=\textwidth]{modelnet_40_clean_sample.png}
+    \caption{Visualisation of a \textit{clean} point cloud of a chair}
+    \label{modelnetc:clean}
+\end{subfigure}
+\hfill
+\begin{subfigure}{0.20\textwidth}
+    \includegraphics[width=\textwidth]{modelnet_40_corrupted_sample.png}
+    \caption{Visualisation of a \textit{corrupted} point cloud of a monitor}
+    \label{modelnetc:corrupted}
+\end{subfigure}
+\hfill        
+\caption{Samples of the objects in the Modelnet40-C dataset}
+\label{modelnetc:samples}
+\end{figure}
+
+
+
+
+\section{Dataset}
+\label{dataset}
+For our work, we use the ModelNet-40C~\cite{sun2022benchmarking} dataset, which consists of 40 classes of models stored with various corruptions, like shearing and occlusion. The advantages of using this dataset for our task are two-fold: 
+\begin{itemize}
+    \item The point clouds are of comparatively lesser complexity and size, hence enabling faster training
+    \item The various corruptions can serve as strong tests for the embeddings and conversely, a model trained on this dataset has notable adversarial resistance to the same.
+\end{itemize}
+
+Figure~\ref{modelnetc:samples} contains a few samples from the ModelNet40-C dataset. The corresponding visualisations were generated by using the procedure detailed in \ref{mitsuba}.
+
+\section{Generating visualisations for point clouds}
+\label{mitsuba}
+To align the modalities of images and point clouds, we use the Mitsuba renderer~\cite{10.1145/3355089.3356498}, as provided in the public \textit{PointVizualisation} repositoty on Github~\cite{pointvisualizaiton}. To ensure consistency across the experiments, we only consider the inputs with \textit{1024} points per cloud. As per Table~\ref{mitsuba:metrics}, we note that, on the NVIDIA GeForce GTX 1050 GPU, the \textit{cuda-rgb} variant is $\approx$3x faster than \textit{llvm-rgb} and advise future researchers to prefer \textit{llvm-rgb} over \textit{scalar-rgb} in the absence of a GPU. \\
+
+\begin{table}[!h]
+\vspace{-2mm}
+\caption{Performance of Mitsuba renderer variants}
+\vspace{-4mm}
+\label{mitsuba:metrics}
+\begin{center}
+\begin{tabular}{|c|c|}
+\hline
+\textbf{Mitsuba variant name} & \textbf{PPS (points per second)} \\
+\hline
+scalar-rgb & 14.625 \\
+\hline
+llvm-rgb & 18.720 \\
+\hline
+cuda-rgb &  \textbf{56.161} \\
+\hline
+\end{tabular}
+\end{center}
+\vspace{-6mm}
+\end{table}
+
+\section{Building on representations}
+\label{embeddings}
+
+\subsection{Zero-shot classification}
+\label{zero-shot:intro}
+Zero-shot classification~\cite{10.1145/3293318} is a powerful paradigm in machine learning, wherein by learning from auxillary data, the models can classify new inference data whose classes are disjoint from those of the auxillary data. Zero-shot classifiers are pre-trained on large amounts of data, making their embeddings contrastively expressive. \\ \\
+Figure~\ref{clip:arch} shows a schematic diagram of the Contrastive language-image pretraining(CLIP) paradigm of matching images with their corresponding captions. We derive from the immense expressive power of such models by the virtue of the diversity and size of their pre-training dataset.
+
+\begin{figure}[thpb]
+    \centering
+    \includegraphics[scale=0.225]{clipv2.png}
+    \caption{An overview of the CLIP~\cite{radford2021learning} paradigm}
+    \label{clip:arch}
+    \vspace{-4mm}
+\end{figure} 
+
+\subsection{Double Roulette Sampling}
+\label{zero-shot:doubleroulette}
+To generate a diverse minimal testing dataset to evaluate candidate zero-shot classifier, we propose \textit{Double Roulette Sampling}. As alluded to in \ref{mitsuba}, we limit our search for candidate point clouds to those who represent each object with 1024 points - this results in $55$ corruption variants to choose from. \\ \\
+\textbf{Notation}
+\begin{itemize}
+    \item $C$ refers to the set of classes of objects - In ModelNet-40C, $|C|$ = $40$.
+    \item For each class index $i$, $D_{i}$ consists of the list of objects in ModelNet-40C belonging to that class.
+    \item $T$ refers to the set of transformations/corruptions present in the ModelNet-40C. In particular, for a given input object of class $i$, there will be $|T|$ entries in $D_{i}$ - in our experiments, $|T|$ = $55$. 
+\end{itemize}
+
+\begin{algorithm}
+ \caption{Double Roulette Sampling}
+ \begin{algorithmic}[1]
+ \renewcommand{\algorithmicrequire}{\textbf{Input:}}
+ \renewcommand{\algorithmicensure}{\textbf{Output:}}
+ \REQUIRE Class indices indexed from $1$ to $|C|$
+ \REQUIRE List of objects represented by $D_{1}$ to $D_{|C|}$
+ \ENSURE  $|C|$ point clouds that constitute the test set for evaluating zero-shot classifiers
+ \\ \textit{Initialisation} :
+  \STATE $O = \Phi$
+  \FOR {$classIndex = 1$ to $|C|$}
+    \STATE $chosenCloud$ = $RandomSample(D_{classIndex})$
+    \STATE $O = O \bigcup \{chosenCloud\}$
+\ENDFOR
+ \RETURN $O$ 
+ \end{algorithmic} 
+ \label{zero-shot:algo}
+ \end{algorithm}
+
+Algorithm~\ref{zero-shot:algo} contains the selection procedure for the minimal test set. At the end of this procedure, we have $40$ diverse and unique samples, each belonging to a unique category of objects.
+
+\subsection{Evaluating Candidate models for Image Embeddings}
+\label{zero-shot:candidates}
+For this experiment, we consider the following models for the purposes of the zero-shot classification task:
+\begin{itemize}
+    \item clip-vit-large-patch14~\footnote{https://huggingface.co/openai/clip-vit-large-patch14}
+    \item clip-vit-base-patch32~\footnote{https://huggingface.co/openai/clip-vit-base-patch32}
+    \item CLIP-ViT-H-14-laion2B-s32B-b79K~\footnote{laion/CLIP-ViT-H-14-laion2B-s32B-b79K}
+    \item CLIP-ViT-L-14-DataComp.XL-s13B-b90K~\footnote{https://huggingface.co/laion/CLIP-ViT-L-14-DataComp.XL-s13B-b90K}
+\end{itemize}
+For each model, we feed in the point cloud visualiations of the minimal test set along with a set of $40$ ordered prompts of the form \textit{A model of \textbf{objectType}}. We evaluate the performance of these models through the top-\textit{k} accuracy scores, where $k = \{1, 3\}$.
+
+\begin{table}[!h]
+\vspace{-2mm}
+\caption{Performance of zero-shot classifiers over the minimal test set}
+\vspace{-4mm}
+\label{zero-shot:metrics}
+\begin{center}
+\begin{tabular}{|c|c|c|}
+\hline
+\textbf{Model name} & \textbf{Top-1 acc.} & \textit{Top-3 acc.} \\
+\hline
+clip-vit-large-patch14 & 0.125 & 0.150 \\
+\hline
+clip-vit-base-patch32 & 0.125 & 0.200 \\
+\hline
+CLIP-ViT-H-14-laion2B-s32B-b79K & \textbf{0.300} & \textbf{0.400} \\
+\hline
+CLIP-ViT-L-14-DataComp.XL-s13B-b90K & 0.225 & 0.350 \\
+\hline
+\end{tabular}
+\end{center}
+\vspace{-6mm}
+\end{table}
+
+In lieu of the results summarised in Table~\ref{zero-shot:metrics}, we use \textit{CLIP-ViT-L-14-DataComp.XL-s13B-b90K} as the source for image embeddings.
+
+\subsection{Point Cloud Embeddings}
+\label{point-cloud:embeddings}
+
+For embedding point clouds, we use Pointnet~\cite{Qi_2017_CVPR} through a trained checkpoint for the ModelNet-40C dataset. We use the global feature vector block for the point cloud as a whole and leverage the adversarial robustness capabilities of this model. 
+
+\section{Multimodal alignment through feed-forward networks}
+\label{alignment}
+
+In order to integrate the robustness of the Pointnet encoder and the expressiveness of CLIP-ViT, we learn a \textit{linear mapping} from the embeddings of the point cloud to those of the images. We note that the efficacy of such a network has been demonstrated in the image-text alignment setting~\cite{merullo2023linearly}, which motivates our use case.
+
+\subsection{Model architecture}
+\label{alignment:arch}
+\textit{POINTSPIDER} consists of the following blocks:
+\begin{itemize}
+    \item $3$ Upsampling layers that convert the input embedding into higher-dimensional vectors
+    \item $3$ Downsampling layers that convert the higher-dimensional vectors back into the dimensions of the target output embedding
+\end{itemize}
+Each Upsampling layer progressively doubles the current embedding size, and each Downsampling layer progressively halves the current embedding size. Both Pointnet's global feature and CLIP-ViT produce $1024$ dimensional embeddings, hence enabling this symmetrical structure.
+
+In addition to this \textit{BASE} architecture, we introduce two new variants of \textit{POINTSPIDER}, by applying LayerNorm~\footnote{https://pytorch.org/docs/stable/generated/torch.nn.LayerNorm.html} and LocalResponseNorm~\footnote{https://pytorch.org/docs/stable/generated/torch.nn.LocalResponseNorm.html} (with $1$ neighbouring channel) into all blocks except for the last downsampling layer. 
+\\
+We denote these new variants \textit{LNORM} and \textit{RNORM} respectively.
+
+\subsection{Experimental setup}
+\label{alignment:experiment}
+We divide the ModelNet-40 dataset randomly into $2048$ train point clouds and $420$ test point clouds. For each of these point clouds, we generate corresponding images, as described in~\ref{mitsuba}. \\ 
+We train these models for $1000$ epochs using the Adam~\cite{DBLP:journals/corr/KingmaB14} optimiser with a learning rate of $0.005$, using the \textit{Mean L1 loss} between the transformed Pointnet embeddings and the corresponding CLIP-ViT embeddings. 
+
+\subsection{Results}
+\label{alignment:metrics}
+We report the performance of each variant of POINTSPIDER as a function of the Mean L1 loss on the test section of the dataset. As a lower loss value is more optimal, we report the \textit{$L_1DIV$} scores, defined as follows:
+\[ L_1DIV = \frac{1}{Mean\_L1\_Loss} \]
+
+\begin{table}[!h]
+\vspace{-2mm}
+\caption{Performance of POINTSPIDER variants over the ModelNet-40 test set}
+\vspace{-4mm}
+\label{alignment:metrics}
+\begin{center}
+\begin{tabular}{|c|c|}
+\hline
+\textbf{Model variant} & \textbf{$L_1DIV$ score} \\
+\hline
+BASE & 1.529 \\
+\hline
+LNORM & \textbf{3.996} \\
+\hline
+RNORM & 1.569 \\
+\hline
+\end{tabular}
+\end{center}
+\vspace{-6mm}
+\end{table} 
+\vspace{5pt}
+Based on the results in Table~\ref{alignment:metrics}, we conclude that using Layer Normalisation in the feed-forward mapping network is the most optimal setting. We also note the strong performance of this variant in the task and hence deem this model architecture promising for the task of multimodal alignment of point clouds and images.
+
+
+\section{Discussions}
+\label{discussions}
+
+\subsection{Point cloud similarity measures}
+\label{discussions:differencing}
+Such an architecture allows researchers to find similarities between two point clouds \textit{without the need of projecting them to the image space}, saving up compute resources. On using the mapping block on top of the Pointnet outputs, the we hypothesise that the resultant embedding vectors capture both the expressiveness of the CLIP-ViT model and the geometric and adversarial understanding of the underlying Pointnet model. \\
+We note the following areas of interest of the same:
+\begin{itemize}
+    \item Removing duplicate point clouds from a dataset
+    \item Finding similar point clouds to enable iterative editing
+\end{itemize}
+
+
+\subsection{Future Work}
+We note the following themes for future work for POINTSPIDER.
+\begin{itemize}
+    \item Experimenting with different point cloud embedding architectures like PointMLP~\cite{ma2022rethinking} and PointTransformer~\cite{Zhao_2021_ICCV}.
+    \item Benchmarking and distilling the embeddings of large (possibly MML) models including Point Clouds as a modality, like ULIP and PointBERT~\cite{Yu_2022_CVPR}.
+    \item Fine-tuning the embeddings for other domains, for example, the automotive domain.
+\end{itemize}
+
+\section{Conclusion}
+\label{conclusion}
+In this paper, we have looked at the formulation of POINTSPIDER, a linear network for multimodal alignment of point clouds and images. We have also looked at the potential use cases of such a system and also note some interesting future directions for this project.
+
+\section{Acknowledgement}
+\label{ack}
+We would like to acknowledge the following Github repositories for their valuable implementations of crucial sections of POINTSPIDER:
+\begin{itemize}
+    \item https://github.com/jiachens/ModelNet40-C
+    \item https://github.com/qizekun/PointVisualizaiton
+    \item https://github.com/huggingface/transformers/
+    \item https://github.com/pytorch/pytorch
+\end{itemize}
+
+\balance
+\bibliographystyle{IEEEtran}
+
+\bibliography{references}
+
+\end{document}
