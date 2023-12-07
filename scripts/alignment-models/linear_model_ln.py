@@ -49,6 +49,7 @@ class LinearProjectionHeadLN(nn.Module):
         self.down1 = nn.Sequential(
             nn.Linear(self.bottle_size, self.inter_size_2),
             nn.Tanh(),
+            nn.LayerNorm(self.inter_size_2),
             nn.Dropout(p = self.dropout_rate)
         )
         
